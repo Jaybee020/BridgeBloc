@@ -39,6 +39,9 @@ function unpadSolanaAddress(paddedHex: string) {
 const evmAddressToBytes32 = (address: string): string =>
   `0x000000000000000000000000${address.replace("0x", "")}`;
 
+export const bytes32toEVMAddress = (address: string): string =>
+  `0x${address.slice(26)}`;
+
 //TO-DO
 //Verify if is actual solana or evm address
 export function padAddress(address: string) {
@@ -49,6 +52,26 @@ export function padAddress(address: string) {
   }
 }
 export const ALL_SUPPORTED_TOKENS = [
+  {
+    domainId: 0,
+    token: padAddress("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"),
+    tokenIdentifier: "USDC-Ethereum",
+  },
+  {
+    domainId: 0,
+    token: padAddress("0x6B175474E89094C44Da98b954EedeAC495271d0F"),
+    tokenIdentifier: "DAI-Ethereum",
+  },
+  {
+    domainId: 0,
+    token: padAddress("0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E"),
+    tokenIdentifier: "USDT-Ethereum",
+  },
+  {
+    domainId: 0,
+    token: padAddress("0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E"),
+    tokenIdentifier: "WETH-Ethereum",
+  },
   {
     domainId: 1,
     token: padAddress("0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E"),
@@ -116,6 +139,7 @@ function getSupportedDestinationTokens(domainId: number) {
 }
 
 export function getTokenInfoFromTokenIdentifier(tokenIdentifier: string) {
+  console.log(tokenIdentifier);
   return ALL_SUPPORTED_TOKENS.find(
     (token) => token.tokenIdentifier == tokenIdentifier
   );

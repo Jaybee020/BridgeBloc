@@ -110,17 +110,16 @@ constructor(
         uint24 fee,
         uint256 amount
     ) internal returns (uint256 amountOut) {
-        IERC20(_tokenIn).safeApprove(address(swapRouter), amount);
         address tokenA = _tokenIn;
         address tokenB = _tokenOut;
         if (tokenA == address(0)) {
             tokenA = WETH;
+            IWETH(WETH).deposit{ value : amount }();
         }
         if(tokenB == address(0)) {  
             tokenB = WETH;
         }
-        
-        
+        IERC20(tokenA).safeApprove(address(swapRouter), amount);
         if (CCTP_DOMAIN == 1) {
             IAvaxSwapRouter.ExactInputSingleParams memory params = IAvaxSwapRouter.ExactInputSingleParams({
                 tokenIn: tokenA,
@@ -172,12 +171,15 @@ constructor(
         uint32 destinationDomain,
         bytes32 recipient,
         bytes32 destinationContract
-    ) external returns (uint64) {
+    ) external payable returns (uint64) {
         require( sourceToken == address(usdcToken) ||isSupportedToken(sourceToken, fee), "Source Token not supported");
         require(supportedDestinationChains[destinationDomain].isSupported, "Destination chain not supported");//is this neccesary?
         require(supportedDestinationTokens[destinationDomain][destinationToken], "Destination token not supported for this chain");
-        IERC20(sourceToken).safeTransferFrom(msg.sender, address(this), amount);// try to do without approval
-        
+        if(sourceToken == address(0)) {
+            require(msg.value == amount, "Incorrect amount of ether");
+        }else{
+            IERC20(sourceToken).safeTransferFrom(msg.sender, address(this), amount);// try to do without approval
+        }
         uint256 amountOut = sourceToken != address(usdcToken)
             ? performSwap(sourceToken, address(usdcToken), address(this),fee ,amount)
             : amount;

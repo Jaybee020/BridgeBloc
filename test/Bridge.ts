@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { Contract } from "ethers";
+import { Contract, ZeroAddress } from "ethers";
 import hre, { ethers } from "hardhat";
 import ISwapRouter from "@uniswap/v3-periphery/artifacts/contracts/SwapRouter.sol/SwapRouter.json";
 // import IWETH from "../artifacts/contracts/interfaces/WETH.sol/IWETH.json";
@@ -8,6 +8,7 @@ import ITokenMessenger from "../artifacts/contracts/evm/interfaces/ITokenMesseng
 import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 import { CrossChainBridge, uniswap } from "../typechain-types";
 import {
+  bytes32toEVMAddress,
   chainTypes,
   getDeploymentVariablesForNetwork,
   getDestinationChainTypeFromDomainId,
@@ -175,7 +176,7 @@ describe("CCTP Bridge ETH Mainnet Fork Tests", function () {
     ).to.equal(false);
   });
 
-  it("should test usdc deposit", async () => {
+  it("should test usdc deposit and withdrawal", async () => {
     const [_, newSigner] = await ethers.getSigners();
     const block = await hre.ethers.provider.getBlock("latest");
     const blockTimestamp = block ? block.timestamp : 0;
@@ -266,5 +267,206 @@ describe("CCTP Bridge ETH Mainnet Fork Tests", function () {
     await expect(depositTxn)
       .to.emit(usdcContract, "Approval")
       .withArgs(bridgeAddress, caseInsensitiveTokenMessenger, depositAmount);
+    await expect(depositTxn)
+      .to.emit(tokenMessengerContract, "DepositForBurn")
+      .withArgs(
+        anyValue,
+        USDC_ADDRESS,
+        depositAmount,
+        bridgeAddress,
+        padAddress(destinationContract.toLowerCase()),
+        destinationDomain,
+        anyValue,
+        isZeroAddress
+      );
+  });
+
+  it("should deposit another erc20 token and with another withdrawal erc20 token", async function () {
+    const [_, newSigner] = await ethers.getSigners();
+    const block = await hre.ethers.provider.getBlock("latest");
+    const blockTimestamp = block ? block.timestamp : 0;
+    const swapRouter = new ethers.Contract(
+      UNISWAP_ROUTER,
+      ISwapRouter.abi,
+      newSigner
+    );
+    const usdcContract = new ethers.Contract(
+      USDC_ADDRESS,
+      IERC20Metadata.abi,
+      newSigner
+    );
+    const daiAddress = bytes32toEVMAddress(
+      getTokenInfoFromTokenIdentifier("DAI-Ethereum")!.token
+    );
+    const daiContract = new ethers.Contract(
+      daiAddress,
+      IERC20Metadata.abi,
+      newSigner
+    );
+
+    const tokenMessengerContract = new ethers.Contract(
+      TOKEN_MESSENGER,
+      ITokenMessenger.abi,
+      newSigner
+    );
+
+    const tokenSwapFee = 3000;
+
+    const swapAmount = "1";
+    let swapParam = {
+      tokenIn: WETH_ADDRESS,
+      tokenOut: daiAddress,
+      fee: tokenSwapFee,
+      recipient: newSigner.address,
+      deadline: blockTimestamp + 100,
+      amountIn: ethers.parseEther(swapAmount),
+      amountOutMinimum: 0,
+      sqrtPriceLimitX96: 0,
+    };
+    await swapRouter.exactInputSingle(swapParam, {
+      value: ethers.parseEther(swapAmount),
+    });
+    await swapRouter.refundETH();
+
+    // Step2: Call the deposit method of cctpbridge to deposit dai
+    const daiDecimals = await daiContract.decimals();
+    const depositAmount = ethers.parseUnits("100", daiDecimals);
+    // Step2: Call the deposit method of cctpbridge to deposit usdc
+    const destinationToken =
+      getTokenInfoFromTokenIdentifier("USDC-Avalanche")!.token;
+    const destinationDomain = 1;
+    const recipient = padAddress(newSigner.address);
+    const destinationContract = await cctpBridge.getAddress();
+    const initialBalance = ethers.formatUnits(
+      await daiContract.balanceOf(newSigner.address),
+      daiDecimals
+    );
+    await daiContract.approve(destinationContract, depositAmount); // Approve CCTPBridge[same as destination contract] to spend depositAmount.
+    const depositTxn = await cctpBridge
+      .connect(newSigner)
+      .deposit(
+        depositAmount,
+        daiAddress,
+        500,
+        destinationToken,
+        destinationDomain,
+        recipient,
+        padAddress(destinationContract)
+      );
+    const finalBalance = ethers.formatUnits(
+      await daiContract.balanceOf(newSigner.address),
+      daiDecimals
+    );
+
+    // Step3: Assertions
+    const bridgeAddress = await cctpBridge.getAddress();
+    // const destinationContractBytes32 = await cctpBridge.addressToBytes32(
+    //   destinationContract
+    // );
+    expect(parseInt(finalBalance)).to.equal(parseInt(initialBalance) - 100);
+    await expect(depositTxn)
+      .to.emit(cctpBridge, "BridgeDepositReceived")
+      .withArgs(
+        newSigner.address,
+        recipient.toLowerCase(),
+        CCTP_DOMAIN.toString(),
+        destinationDomain.toString(),
+        anyValue,
+        anyValue,
+        daiAddress,
+        destinationToken.toLowerCase()
+      );
+    await expect(depositTxn)
+      .to.emit(daiContract, "Transfer")
+      .withArgs(newSigner.address, bridgeAddress, depositAmount);
+    await expect(depositTxn)
+      .to.emit(usdcContract, "Approval")
+      .withArgs(bridgeAddress, caseInsensitiveTokenMessenger, anyValue);
+    await expect(depositTxn)
+      .to.emit(tokenMessengerContract, "DepositForBurn")
+      .withArgs(
+        anyValue,
+        USDC_ADDRESS,
+        anyValue, //deposit amount
+        bridgeAddress,
+        padAddress(destinationContract.toLowerCase()),
+        destinationDomain,
+        anyValue,
+        isZeroAddress
+      );
+  });
+
+  it("should test native ETh deposit and bridging to another chain", async function () {
+    const [_, newSigner] = await ethers.getSigners();
+    const block = await hre.ethers.provider.getBlock("latest");
+    const swapRouter = new ethers.Contract(
+      UNISWAP_ROUTER,
+      ISwapRouter.abi,
+      newSigner
+    );
+    const bridgeAddress = await cctpBridge.getAddress();
+    const usdcContract = new ethers.Contract(
+      USDC_ADDRESS,
+      IERC20Metadata.abi,
+      newSigner
+    );
+    const nativeEthAddress = ZeroAddress;
+    const tokenMessengerContract = new ethers.Contract(
+      TOKEN_MESSENGER,
+      ITokenMessenger.abi,
+      newSigner
+    );
+    const nativeEthDecimals = 18;
+
+    const tokenSwapFee = 3000;
+    const depositAmount = ethers.parseUnits("1", nativeEthDecimals);
+
+    const destinationToken =
+      getTokenInfoFromTokenIdentifier("USDC-Avalanche")!.token;
+    const destinationDomain = 1;
+    const recipient = padAddress(newSigner.address);
+    const destinationContract = await cctpBridge.getAddress();
+
+    const depositTxn = await cctpBridge
+      .connect(newSigner)
+      .deposit(
+        depositAmount,
+        nativeEthAddress,
+        3000,
+        destinationToken,
+        destinationDomain,
+        recipient,
+        padAddress(destinationContract),
+        { value: depositAmount }
+      );
+
+    await expect(depositTxn)
+      .to.emit(cctpBridge, "BridgeDepositReceived")
+      .withArgs(
+        newSigner.address,
+        recipient.toLowerCase(),
+        CCTP_DOMAIN.toString(),
+        destinationDomain.toString(),
+        anyValue,
+        anyValue,
+        nativeEthAddress,
+        destinationToken.toLowerCase()
+      );
+
+    await expect(depositTxn)
+      .to.emit(usdcContract, "Approval")
+      .withArgs(bridgeAddress, caseInsensitiveTokenMessenger, anyValue);
+    await expect(depositTxn)
+      .to.emit(tokenMessengerContract, "DepositForBurn")
+      .withArgs(
+        anyValue,
+        USDC_ADDRESS,
+        anyValue, //deposit amount
+        bridgeAddress,
+        padAddress(destinationContract.toLowerCase()),
+        destinationDomain,
+        anyValue,
+        isZeroAddress
+      );
   });
 });
