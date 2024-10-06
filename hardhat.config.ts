@@ -1,9 +1,13 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import "dotenv/config";
+import "hardhat-gas-reporter";
 
 const config: HardhatUserConfig = {
   solidity: "0.8.27",
+  gasReporter: {
+    enabled: true,
+  },
   networks: {
     hardhat: {
       forking: {
