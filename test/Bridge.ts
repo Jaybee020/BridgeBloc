@@ -26,6 +26,7 @@ describe("CCTP Bridge ETH Mainnet Fork Tests", function () {
   const MESSAGE_TRANSMITTER = deploymentVariable.messageTransmitter;
   const CCTP_DOMAIN = deploymentVariable.cctpDomain;
   const UNISWAP_FACTORY = deploymentVariable.uniswapFactory;
+  const WETH_USDC_SWAP_FEE = deploymentVariable.wethUsdcSwapFee;
   const DESTINATION_DOMAINS = deploymentVariable.destinationChains.map(
     (data) => data.domainId
   );
@@ -56,6 +57,7 @@ describe("CCTP Bridge ETH Mainnet Fork Tests", function () {
       UNISWAP_FACTORY,
       WETH_ADDRESS,
       CCTP_DOMAIN,
+      WETH_USDC_SWAP_FEE,
       DESTINATION_DOMAINS,
       DESTINATION_DOMAINS_CHAINTYPES,
       DESTINATION_TOKEN_DOMAINS,

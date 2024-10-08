@@ -196,6 +196,7 @@ export const deploymentVariables = {
       tokenMessenger: "0xd0c3da58f55358142b8d3e06c1c30c5c6114efe8",
       messageTransmitter: "0x26413e8157cd32011e726065a5462e97dd4d03d9",
       cctpDomain: cctpDomains.ethereum,
+      wethUsdcSwapFee: 3000,
       uniswapFactory: "0x1F98431c8aD98523631AE4a59f267346ea31F984",
       destinationChains: getSupportedDestinationChains(cctpDomains.ethereum),
       destinationTokens: getSupportedDestinationTokens(cctpDomains.ethereum),
@@ -210,6 +211,7 @@ export const deploymentVariables = {
       tokenMessenger: "0x12dcfd3fe2e9eac2859fd1ed86d2ab8c5a2f9352",
       messageTransmitter: "0x109bc137cb64eab7c0b1dddd1edf341467dc2d35",
       cctpDomain: cctpDomains.arbitrum,
+      wethUsdcSwapFee: 3000,
       destinationChains: getSupportedDestinationChains(cctpDomains.arbitrum),
       destinationTokens: getSupportedDestinationTokens(cctpDomains.arbitrum),
     },
@@ -235,6 +237,7 @@ export const deploymentVariables = {
           chainName: "",
         },
       ],
+      wethUsdcSwapFee: 3000,
       destinationTokens: [
         {
           domainId: 1,
@@ -257,7 +260,7 @@ export const deploymentVariables = {
       tokenMessenger: "0xbd3fa81b58ba92a82136038b25adec7066af3155",
       messageTransmitter: "0x0a992d191deec32afe36203ad87d7d289a738f81",
       uniswapFactory: "0x1F98431c8aD98523631AE4a59f267346ea31F984",
-
+      wethUsdcSwapFee: 3000,
       cctpDomain: cctpDomains.ethereum,
       destinationChains: getSupportedDestinationChains(cctpDomains.ethereum),
       destinationTokens: getSupportedDestinationTokens(cctpDomains.ethereum),
@@ -271,7 +274,7 @@ export const deploymentVariables = {
       tokenMessenger: "0x19330d10D9Cc8751218eaf51E8885D058642E08A",
       messageTransmitter: "0xC30362313FBBA5cf9163F0bb16a0e01f01A896ca",
       uniswapFactory: "0x1F98431c8aD98523631AE4a59f267346ea31F984",
-
+      wethUsdcSwapFee: 3000,
       cctpDomain: cctpDomains.arbitrum,
       destinationChains: getSupportedDestinationChains(cctpDomains.arbitrum),
       destinationTokens: getSupportedDestinationTokens(cctpDomains.arbitrum),
@@ -285,7 +288,7 @@ export const deploymentVariables = {
       tokenMessenger: "0x6b25532e1060ce10cc3b0a99e5683b91bfde6982",
       messageTransmitter: "0x8186359af5f57fbb40c6b14a588d2a59c0c29880",
       uniswapFactory: "0x1F98431c8aD98523631AE4a59f267346ea31F984",
-
+      wethUsdcSwapFee: 3000,
       cctpDomain: cctpDomains.avalanche,
       destinationChains: getSupportedDestinationChains(cctpDomains.avalanche),
       destinationTokens: getSupportedDestinationTokens(cctpDomains.avalanche),
@@ -297,7 +300,7 @@ export const deploymentVariables = {
       tokenMessenger: "0x6b25532e1060ce10cc3b0a99e5683b91bfde6982",
       messageTransmitter: "0x8186359af5f57fbb40c6b14a588d2a59c0c29880",
       uniswapFactory: "0x33128a8fC17869897dcE68Ed026d694621f6FDfD",
-
+      wethUsdcSwapFee: 3000,
       cctpDomain: cctpDomains.base,
       destinationChains: getSupportedDestinationChains(cctpDomains.base),
       destinationTokens: getSupportedDestinationTokens(cctpDomains.base),

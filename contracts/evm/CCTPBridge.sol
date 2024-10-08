@@ -28,14 +28,15 @@ contract CrossChainBridge is Ownable, BridgeUtil {
     }
 
     uint32 public immutable CCTP_DOMAIN;
-
+    uint24 public immutable WETH_USDC_SWAP_FEE;
+    address public immutable swapFactory;
+    address public immutable WETH;
     ISwapRouter public immutable swapRouter;
     IAvaxSwapRouter public immutable avaxSwapRouter;
     IERC20 public immutable usdcToken;
     ITokenMessenger public immutable tokenMessenger;
     IMessageTransmitter public immutable messageTransmitter;
-    address public immutable swapFactory;
-    address public immutable WETH;
+
 
     mapping(uint32 => DestinationChain) public supportedDestinationChains;
     mapping(uint32 => mapping(bytes32 => bool)) public supportedDestinationTokens;
@@ -70,6 +71,7 @@ constructor(
         address swapFactory_,
         address WETH_,
         uint32 domain,
+        uint24 WETH_USDC_SWAP_FEE_,
         uint32[] memory destinationDomains,
         ChainType[] memory chainTypes,
         uint32[] memory tokenDomains,
@@ -86,6 +88,7 @@ constructor(
         swapFactory = swapFactory_;
         WETH = WETH_;
         CCTP_DOMAIN = domain;
+        WETH_USDC_SWAP_FEE = WETH_USDC_SWAP_FEE_;
 
         // Initialize supported destination chains
         for (uint256 i = 0; i < destinationDomains.length; i++) {
@@ -99,10 +102,11 @@ constructor(
     }
 
 
-    //TO-DO
-    //ETH Output might be WETH on swap
-    //Direct ETH Transfer as output token might be possible in V4
-    //find a way to add slippage. Also might be possible in V4
+    function checkPoolExists(address tokenA, address tokenB, uint24 fee) internal view returns (bool) {
+        address poolAddr = IUniswapV3Factory(swapFactory).getPool(tokenA, tokenB, fee);
+        return poolAddr != address(0);
+    }
+
     function performSwap(
         address _tokenIn,
         address _tokenOut,
@@ -110,35 +114,59 @@ constructor(
         uint24 fee,
         uint256 amount
     ) internal returns (uint256 amountOut) {
-        address tokenA = _tokenIn;
-        address tokenB = _tokenOut;
-        if (tokenA == address(0)) {
-            tokenA = WETH;
-            IWETH(WETH).deposit{ value : amount }();
+        address tokenA = _tokenIn == address(0) ? WETH : _tokenIn;
+        address tokenB = _tokenOut == address(0) ? WETH : _tokenOut;
+
+        if (_tokenIn == address(0)) {
+            IWETH(WETH).deposit{value: amount}();
         }
-        if(tokenB == address(0)) {  
-            tokenB = WETH;
-        }
+
         IERC20(tokenA).safeApprove(address(swapRouter), amount);
+
+        if (checkPoolExists(tokenA, tokenB, fee)) {
+            // Direct swap
+            amountOut = executeSwap(tokenA, tokenB, _recipient, fee, amount);
+        } else if (checkPoolExists(tokenA, WETH, fee) && checkPoolExists(WETH, tokenB, fee)) {
+            // Two-step swap via WETH
+            uint256 wethAmount = executeSwap(tokenA, WETH, address(this), fee, amount);
+            IERC20(WETH).safeApprove(address(swapRouter), wethAmount);
+            amountOut = executeSwap(WETH, tokenB, _recipient, fee, wethAmount);
+        } else {
+            revert("No valid swap path found");
+        }
+
+        if (_tokenOut == address(0)) {
+            IWETH(WETH).withdraw(amountOut);
+            payable(_recipient).transfer(amountOut);
+        }
+    }
+
+    function executeSwap(
+        address tokenIn,
+        address tokenOut,
+        address recipient,
+        uint24 fee,
+        uint256 amountIn
+    ) internal returns (uint256 amountOut) {
         if (CCTP_DOMAIN == 1) {
             IAvaxSwapRouter.ExactInputSingleParams memory params = IAvaxSwapRouter.ExactInputSingleParams({
-                tokenIn: tokenA,
-                tokenOut: tokenB,
+                tokenIn: tokenIn,
+                tokenOut: tokenOut,
                 fee: fee,
-                recipient: _recipient,
-                amountIn: amount,
+                recipient: recipient,
+                amountIn: amountIn,
                 amountOutMinimum: 0,
                 sqrtPriceLimitX96: 0
             });
             amountOut = avaxSwapRouter.exactInputSingle(params);
         } else {
             ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
-                tokenIn: tokenA,
-                tokenOut: tokenB,
+                tokenIn: tokenIn,
+                tokenOut: tokenOut,
                 fee: fee,
-                recipient: _recipient,
+                recipient: recipient,
                 deadline: block.timestamp,
-                amountIn: amount,
+                amountIn: amountIn,
                 amountOutMinimum: 0,
                 sqrtPriceLimitX96: 0
             });
@@ -146,17 +174,12 @@ constructor(
         }
     }
 
-
-    //check if token is swappable by usdc on uniswapV3Router
-    function isSupportedToken(address token,uint24 paymentTokenSwapFee) public view returns (bool) {
-          address tokenA = token;
-          address tokenB = address(usdcToken);
-            if (token == address(0)) {
-                tokenA = WETH;
-            }
-            address poolAddr = IUniswapV3Factory(swapFactory).getPool(tokenA, tokenB, paymentTokenSwapFee);
-     require(poolAddr != address(0), "Pool does not exist for specified pool");
-        return true;
+    function isSupportedToken(address token, uint24 paymentTokenSwapFee) public view returns (bool) {
+        address tokenA = token == address(0) ? WETH : token;
+        address tokenB = address(usdcToken);
+        
+        return checkPoolExists(tokenA, tokenB, paymentTokenSwapFee) || 
+               (checkPoolExists(tokenA, WETH, paymentTokenSwapFee) && checkPoolExists(WETH, tokenB, paymentTokenSwapFee));
     }
 
 
