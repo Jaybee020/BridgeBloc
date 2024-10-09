@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { Contract, ZeroAddress } from "ethers";
 import hre, { ethers } from "hardhat";
-import ISwapRouter from "@uniswap/v3-periphery/artifacts/contracts/SwapRouter.sol/SwapRouter.json";
+import IAvaxSwapRouter from "../artifacts/contracts/evm/interfaces/IAvaxSwapRouter.sol/IAvaxSwapRouter.json";
 // import IWETH from "../artifacts/contracts/interfaces/WETH.sol/IWETH.json";
 import IERC20Metadata from "@openzeppelin/contracts/build/contracts/IERC20Metadata.json";
 import ITokenMessenger from "../artifacts/contracts/evm/interfaces/ITokenMessenger.sol/ITokenMessenger.json";
@@ -184,7 +184,7 @@ describe("CCTP Bridge ETH Mainnet Fork Tests", function () {
     const blockTimestamp = block ? block.timestamp : 0;
     const swapRouter = new ethers.Contract(
       UNISWAP_ROUTER,
-      ISwapRouter.abi,
+      IAvaxSwapRouter.abi,
       newSigner
     );
     const usdcContract = new ethers.Contract(
@@ -205,7 +205,6 @@ describe("CCTP Bridge ETH Mainnet Fork Tests", function () {
       tokenOut: USDC_ADDRESS,
       fee: 3000,
       recipient: newSigner.address,
-      deadline: blockTimestamp + 100,
       amountIn: ethers.parseEther(swapAmount),
       amountOutMinimum: 0,
       sqrtPriceLimitX96: 0,
@@ -213,7 +212,6 @@ describe("CCTP Bridge ETH Mainnet Fork Tests", function () {
     await swapRouter.exactInputSingle(swapParam, {
       value: ethers.parseEther(swapAmount),
     });
-    await swapRouter.refundETH();
 
     // Step2: Call the deposit method of cctpbridge to deposit usdc
     const usdcDecimal = await usdcContract.decimals();
@@ -289,7 +287,7 @@ describe("CCTP Bridge ETH Mainnet Fork Tests", function () {
     const blockTimestamp = block ? block.timestamp : 0;
     const swapRouter = new ethers.Contract(
       UNISWAP_ROUTER,
-      ISwapRouter.abi,
+      IAvaxSwapRouter.abi,
       newSigner
     );
     const usdcContract = new ethers.Contract(
@@ -320,7 +318,6 @@ describe("CCTP Bridge ETH Mainnet Fork Tests", function () {
       tokenOut: daiAddress,
       fee: tokenSwapFee,
       recipient: newSigner.address,
-      deadline: blockTimestamp + 100,
       amountIn: ethers.parseEther(swapAmount),
       amountOutMinimum: 0,
       sqrtPriceLimitX96: 0,
@@ -328,7 +325,6 @@ describe("CCTP Bridge ETH Mainnet Fork Tests", function () {
     await swapRouter.exactInputSingle(swapParam, {
       value: ethers.parseEther(swapAmount),
     });
-    await swapRouter.refundETH();
 
     // Step2: Call the deposit method of cctpbridge to deposit dai
     const daiDecimals = await daiContract.decimals();
@@ -403,7 +399,7 @@ describe("CCTP Bridge ETH Mainnet Fork Tests", function () {
     const block = await hre.ethers.provider.getBlock("latest");
     const swapRouter = new ethers.Contract(
       UNISWAP_ROUTER,
-      ISwapRouter.abi,
+      IAvaxSwapRouter.abi,
       newSigner
     );
     const bridgeAddress = await cctpBridge.getAddress();

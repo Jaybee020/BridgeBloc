@@ -148,8 +148,7 @@ constructor(
         uint24 fee,
         uint256 amountIn
     ) internal returns (uint256 amountOut) {
-        if (CCTP_DOMAIN == 1) {
-            IAvaxSwapRouter.ExactInputSingleParams memory params = IAvaxSwapRouter.ExactInputSingleParams({
+         IAvaxSwapRouter.ExactInputSingleParams memory params = IAvaxSwapRouter.ExactInputSingleParams({
                 tokenIn: tokenIn,
                 tokenOut: tokenOut,
                 fee: fee,
@@ -159,19 +158,7 @@ constructor(
                 sqrtPriceLimitX96: 0
             });
             amountOut = avaxSwapRouter.exactInputSingle(params);
-        } else {
-            ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
-                tokenIn: tokenIn,
-                tokenOut: tokenOut,
-                fee: fee,
-                recipient: recipient,
-                deadline: block.timestamp,
-                amountIn: amountIn,
-                amountOutMinimum: 0,
-                sqrtPriceLimitX96: 0
-            });
-            amountOut = swapRouter.exactInputSingle(params);
-        }
+      
     }
 
     function isSupportedToken(address token, uint24 paymentTokenSwapFee) public view returns (bool) {
