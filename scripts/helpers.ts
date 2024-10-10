@@ -348,12 +348,13 @@ export const deploymentVariables = {
     },
     base: {
       uniswapRouter: "0x2626664c2603336E57B271c5C0b26F421741e481",
-      usdcToken: "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+      usdcToken: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
       wethToken: "0x4200000000000000000000000000000000000006",
       tokenMessenger: "0x1682Ae6375C4E4A97e4B583BC394c861A46D8962",
-      messageTransmitter: "0xAD09780d193884d503182aD4588450C416D6F9D4",
+      messageTransmitter:
+        "0xAD09780d193884d503182aD4588450C416D6F9D4".toLowerCase(),
       uniswapFactory: "0x33128a8fC17869897dcE68Ed026d694621f6FDfD",
-      wethUsdcSwapFee: 3000,
+      wethUsdcSwapFee: 100,
       cctpDomain: cctpDomains.base,
       destinationChains: getSupportedDestinationChains(cctpDomains.base),
       destinationTokens: getSupportedDestinationTokens(cctpDomains.base),

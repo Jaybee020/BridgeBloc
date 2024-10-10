@@ -101,10 +101,10 @@ contract CrossChainBridge is Ownable, BridgeUtil {
 
         if (checkPoolExists(tokenA, tokenB, fee)) {
             amountOut = executeSwap(tokenA, tokenB, _recipient, fee, amount);
-        } else if (checkPoolExists(tokenA, WETH, fee) && checkPoolExists(WETH, tokenB, fee)) {
-            uint256 wethAmount = executeSwap(tokenA, WETH, address(this), fee, amount);
+        } else if (checkPoolExists(tokenA, WETH, fee) && checkPoolExists(WETH, tokenB, WETH_USDC_SWAP_FEE)) {
+            uint256 wethAmount = executeSwap(tokenA, WETH, address(this), tokenA == address(usdcToken) ? WETH_USDC_SWAP_FEE : fee , amount);
             IERC20(WETH).safeApprove(address(swapRouter), wethAmount);
-            amountOut = executeSwap(WETH, tokenB, _recipient, fee, wethAmount);
+            amountOut = executeSwap(WETH, tokenB, _recipient, tokenB == address(usdcToken) ? WETH_USDC_SWAP_FEE : fee, wethAmount);
         } else {
             revert("No valid swap path found");
         }
@@ -204,6 +204,7 @@ contract CrossChainBridge is Ownable, BridgeUtil {
         } else {
             amountOut = performSwap(address(usdcToken), destinationToken, address(this), fee, amount);
             if (destinationToken == address(0)) {
+                IWETH(WETH).withdraw(amountOut);
                 recipientAddress.call{value: amountOut}("");
             } else {
                 IERC20(destinationToken).safeTransfer(recipientAddress, amountOut);

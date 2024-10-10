@@ -18,7 +18,7 @@ import {
 
 describe("CCTP Bridge ETH Mainnet Fork Tests", function () {
   let cctpBridge: CrossChainBridge;
-  const deploymentVariable = getDeploymentVariablesForNetwork("eth");
+  const deploymentVariable = getDeploymentVariablesForNetwork("base");
   const UNISWAP_ROUTER = deploymentVariable.uniswapRouter;
   const USDC_ADDRESS = deploymentVariable.usdcToken;
   const WETH_ADDRESS = deploymentVariable.wethToken;
@@ -203,7 +203,7 @@ describe("CCTP Bridge ETH Mainnet Fork Tests", function () {
     let swapParam = {
       tokenIn: WETH_ADDRESS,
       tokenOut: USDC_ADDRESS,
-      fee: 3000,
+      fee: WETH_USDC_SWAP_FEE,
       recipient: newSigner.address,
       amountIn: ethers.parseEther(swapAmount),
       amountOutMinimum: 0,
@@ -296,7 +296,7 @@ describe("CCTP Bridge ETH Mainnet Fork Tests", function () {
       newSigner
     );
     const daiAddress = bytes32toEVMAddress(
-      getTokenInfoFromTokenIdentifier("DAI-Ethereum")!.token
+      getTokenInfoFromTokenIdentifier("DAI-Base")!.token
     );
     const daiContract = new ethers.Contract(
       daiAddress,
@@ -310,7 +310,7 @@ describe("CCTP Bridge ETH Mainnet Fork Tests", function () {
       newSigner
     );
 
-    const tokenSwapFee = 3000;
+    const tokenSwapFee = 500;
 
     const swapAmount = "1";
     let swapParam = {
@@ -345,7 +345,7 @@ describe("CCTP Bridge ETH Mainnet Fork Tests", function () {
       .deposit(
         depositAmount,
         daiAddress,
-        500,
+        100,
         destinationToken,
         destinationDomain,
         recipient,
