@@ -24,7 +24,7 @@ contract CrossChainBridge is Ownable, BridgeUtil {
     }
 
     uint32 public immutable CCTP_DOMAIN;
-    uint24 public immutable WETH_USDC_SWAP_FEE;
+    uint24 public  WETH_USDC_SWAP_FEE;
     address public immutable swapFactory;
     address public immutable WETH;
     ISwapRouter public immutable swapRouter;
@@ -241,6 +241,10 @@ contract CrossChainBridge is Ownable, BridgeUtil {
     function removeDestinationToken(uint32 domainId, bytes32 token) external onlyOwner {
         supportedDestinationTokens[domainId][token] = false;
         emit DestinationTokenRemoved(domainId, token);
+    }
+
+    function setWethUsdcSwapFee(uint24 fee) external onlyOwner {
+        WETH_USDC_SWAP_FEE = fee;
     }
 
     function withdraw(uint256 amount) external onlyOwner {

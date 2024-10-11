@@ -51,3 +51,9 @@ async function deploy() {
   console.log(`CCTP Bridge Deployed At ${cctpBridge.target} For ${network}`);
 }
 deploy().catch((error) => console.log(error));
+
+const DEPLOYMENT_ADDRESSES = {
+  baseTestnet: "0x6885156DCf17f4b32226F74d23D5b2AFc43dd3aF",
+  polygonTestnet: "0x52F22D3566cdf8131fCE6fa42cd5357F0b45A363",
+  sepolia: "0x0d87aB970Ce23a89587F6BDB30b2b957D71d0526",
+};
